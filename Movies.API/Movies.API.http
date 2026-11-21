@@ -45,7 +45,7 @@ GET {{baseUrl}}/api/directors/{{directorId}}/movies
 ### Relationship filters
 GET {{baseUrl}}/api/movie-genres?movieId={{movieId}}&genreId={{genreId}}
 
-### A referenced director cannot be deleted (409)
+### A referenced director cannot be deleted (400 Bad Request)
 DELETE {{baseUrl}}/api/directors/{{directorId}}
 
 ### Delete a linked genre (movie survives)

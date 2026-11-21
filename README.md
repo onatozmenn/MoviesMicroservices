@@ -40,16 +40,16 @@ Each entity has GET list, GET detail, POST, PUT and DELETE operations. MovieGenr
 | Genre | `/api/genres` | `?name=drama`, `/{id}/movies` |
 | MovieGenre | `/api/movie-genres` | `?movieId=1`, `?genreId=1`, `/{movieId}/{genreId}` |
 
-There are 20 core CRUD operations plus two related-movie listing operations. List endpoints return 200, including empty arrays; create returns 201, delete returns 204, missing resources return 404, and invalid input returns 400. Existing relationship pairs and attempts to delete referenced Directors return 409.
+The catalog has 20 CRUD operations and two related-movie queries. GET returns `200 OK` with results or `204 No Content` for an empty list or missing record. POST, PUT and DELETE return `200 OK` with a `CommandResponse` on success. Invalid input, missing write targets and business rules such as duplicate links return `400 Bad Request` with the error message in `CommandResponse.message`. PUT uses the ID in the URL. For a MovieGenre replacement, put the old pair in the URL and the new pair in the body.
 
 ## Data rules
 
-- Required names are validated and trimmed. Movie and Genre duplicate-name checks use exact, case-sensitive names, matching the existing instructor-style checks.
+- Required names are validated and trimmed. Movie titles allow up to 100 characters and genre names up to 25. Movie and Genre duplicate-name checks use exact, case-sensitive names, matching the existing instructor-style checks.
 - Name searches are case-insensitive, escape punctuation and execute through the SQLite provider. Multiple filters are combined with AND.
 - Movie TotalRevenue defaults to 0 and cannot be negative. ReleaseDate may be null; year filtering excludes null dates. DirectorId must identify an existing Director.
 - MovieGenre uses `(MovieId, GenreId)` as its database primary key. Both records must exist. Replacement removes the old link and adds the new link in one SaveChanges call.
 - Deleting a Movie or Genre removes its links, not the other principal entity. Genre removal reuses the instructor's RoleRemove pattern.
-- A Director with movies cannot be deleted. The handler returns a conflict and the database FK uses RESTRICT.
+- A Director with movies cannot be deleted. The API returns `400 Bad Request` and the database foreign key enforces the same rule.
 
 See [the ER diagram](docs/er-diagram.md).
 
@@ -94,4 +94,4 @@ Tests cover CRUD behavior, filters, duplicates, relationship rules, rollback and
 4. Update a Movie and replace one MovieGenre pair with a different valid pair.
 5. Confirm Director deletion is rejected while it owns movies. Delete a linked Genre and verify the Movie survives; then delete the Movie and Director.
 
-For submission, send the repository link and the four team member names according to the instructor's announcement. This repository does not send that email automatically.
+For submission, send the repository link and the four team member names to the instructor by email, as described in the [Phase 1 announcement](https://moodle.bilkent.edu.tr/current/mod/forum/discuss.php?d=2677).
