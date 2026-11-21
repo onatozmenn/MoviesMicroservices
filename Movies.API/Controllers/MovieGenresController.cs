@@ -28,9 +28,12 @@ namespace Movies.API.Controllers
         {
             try
             {
+                if (!ModelState.IsValid)
+                    return InvalidRequest();
+
                 var response = await _mediator.Send(request, cancellationToken);
                 var list = await response.ToListAsync(cancellationToken);
-                return Ok(list);
+                return list.Count > 0 ? Ok(list) : NoContent();
             }
             catch (Exception exception)
             {
@@ -55,11 +58,7 @@ namespace Movies.API.Controllers
                     }, cancellationToken);
 
                 var item = await response.SingleOrDefaultAsync(cancellationToken);
-                if (item is null)
-                    return NotFound(new CommandResponse(false,
-                        "MovieGenre not found!"));
-
-                return Ok(item);
+                return item is not null ? Ok(item) : NoContent();
             }
             catch (Exception exception)
             {
@@ -76,23 +75,15 @@ namespace Movies.API.Controllers
         {
             try
             {
+                if (!ModelState.IsValid)
+                    return InvalidRequest();
+
                 var response = await _mediator.Send(request, cancellationToken);
                 if (response.IsSuccessful)
-                    return CreatedAtAction(nameof(GetById),
-                        new
-                        {
-                            movieId = request.MovieId.Value,
-                            genreId = request.GenreId.Value
-                        }, response);
+                    return Ok(response);
 
-                if (response.Message == "Movie not found!" ||
-                    response.Message == "Genre not found!")
-                    return NotFound(response);
-
-                if (response.Message == "MovieGenre already exists!")
-                    return Conflict(response);
-
-                return BadRequest(response);
+                ModelState.AddModelError(nameof(Post), response.Message);
+                return InvalidRequest();
             }
             catch (Exception exception)
             {
@@ -110,6 +101,9 @@ namespace Movies.API.Controllers
         {
             try
             {
+                if (!ModelState.IsValid)
+                    return InvalidRequest();
+
                 request.OldMovieId = movieId;
                 request.OldGenreId = genreId;
 
@@ -117,15 +111,8 @@ namespace Movies.API.Controllers
                 if (response.IsSuccessful)
                     return Ok(response);
 
-                if (response.Message == "MovieGenre not found!" ||
-                    response.Message == "Movie not found!" ||
-                    response.Message == "Genre not found!")
-                    return NotFound(response);
-
-                if (response.Message == "MovieGenre already exists!")
-                    return Conflict(response);
-
-                return BadRequest(response);
+                ModelState.AddModelError(nameof(Put), response.Message);
+                return InvalidRequest();
             }
             catch (Exception exception)
             {
@@ -150,9 +137,10 @@ namespace Movies.API.Controllers
                     }, cancellationToken);
 
                 if (response.IsSuccessful)
-                    return NoContent();
+                    return Ok(response);
 
-                return NotFound(response);
+                ModelState.AddModelError(nameof(Delete), response.Message);
+                return InvalidRequest();
             }
             catch (Exception exception)
             {
@@ -161,6 +149,15 @@ namespace Movies.API.Controllers
                     new CommandResponse(false,
                         "An exception occurred during MovieGenresDelete."));
             }
+        }
+
+        private BadRequestObjectResult InvalidRequest()
+        {
+            var messages = ModelState.Values
+                .SelectMany(entry => entry.Errors)
+                .Select(error => error.ErrorMessage);
+
+            return BadRequest(new CommandResponse(false, string.Join("|", messages)));
         }
     }
 }

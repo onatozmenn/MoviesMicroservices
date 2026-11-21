@@ -25,9 +25,12 @@ namespace Movies.API.Controllers
         {
             try
             {
+                if (!ModelState.IsValid)
+                    return InvalidRequest();
+
                 var response = await _mediator.Send(request, cancellationToken);
                 var list = await response.ToListAsync(cancellationToken);
-                return Ok(list);
+                return list.Count > 0 ? Ok(list) : NoContent();
             }
             catch (Exception exception)
             {
@@ -44,10 +47,7 @@ namespace Movies.API.Controllers
             {
                 var response = await _mediator.Send(new DirectorQueryRequest(), cancellationToken);
                 var item = await response.SingleOrDefaultAsync(d => d.Id == id, cancellationToken);
-                if (item is null)
-                    return NotFound(new CommandResponse(false, "Director not found!"));
-
-                return Ok(item);
+                return item is not null ? Ok(item) : NoContent();
             }
             catch (Exception exception)
             {
@@ -62,15 +62,10 @@ namespace Movies.API.Controllers
         {
             try
             {
-                var directors = await _mediator.Send(new DirectorQueryRequest(), cancellationToken);
-                var exists = await directors.AnyAsync(d => d.Id == id, cancellationToken);
-                if (!exists)
-                    return NotFound(new CommandResponse(false, "Director not found!"));
-
                 var response = await _mediator.Send(
                     new DirectorMoviesQueryRequest { Id = id }, cancellationToken);
                 var list = await response.ToListAsync(cancellationToken);
-                return Ok(list);
+                return list.Count > 0 ? Ok(list) : NoContent();
             }
             catch (Exception exception)
             {
@@ -85,11 +80,15 @@ namespace Movies.API.Controllers
         {
             try
             {
-                var response = await _mediator.Send(request, cancellationToken);
-                if (!response.IsSuccessful)
-                    return BadRequest(response);
+                if (!ModelState.IsValid)
+                    return InvalidRequest();
 
-                return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
+                var response = await _mediator.Send(request, cancellationToken);
+                if (response.IsSuccessful)
+                    return Ok(response);
+
+                ModelState.AddModelError(nameof(Post), response.Message);
+                return InvalidRequest();
             }
             catch (Exception exception)
             {
@@ -104,15 +103,16 @@ namespace Movies.API.Controllers
         {
             try
             {
+                if (!ModelState.IsValid)
+                    return InvalidRequest();
+
                 request.Id = id;
                 var response = await _mediator.Send(request, cancellationToken);
                 if (response.IsSuccessful)
                     return Ok(response);
 
-                if (response.Message == "Director not found!")
-                    return NotFound(response);
-
-                return BadRequest(response);
+                ModelState.AddModelError(nameof(Put), response.Message);
+                return InvalidRequest();
             }
             catch (Exception exception)
             {
@@ -129,12 +129,10 @@ namespace Movies.API.Controllers
             {
                 var response = await _mediator.Send(new DirectorRemoveRequest { Id = id }, cancellationToken);
                 if (response.IsSuccessful)
-                    return NoContent();
+                    return Ok(response);
 
-                if (response.Message == "Director has related movies!")
-                    return Conflict(response);
-
-                return NotFound(response);
+                ModelState.AddModelError(nameof(Delete), response.Message);
+                return InvalidRequest();
             }
             catch (Exception exception)
             {
@@ -142,6 +140,15 @@ namespace Movies.API.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new CommandResponse(false, "An exception occurred during DirectorsDelete."));
             }
+        }
+
+        private BadRequestObjectResult InvalidRequest()
+        {
+            var messages = ModelState.Values
+                .SelectMany(entry => entry.Errors)
+                .Select(error => error.ErrorMessage);
+
+            return BadRequest(new CommandResponse(false, string.Join("|", messages)));
         }
     }
 }

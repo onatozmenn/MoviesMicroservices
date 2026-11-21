@@ -47,11 +47,10 @@ namespace Movies.Tests
             => _mediator.Send(new GenreAddRequest { Name = name });
 
         [Fact]
-        public async Task Crud_uses_created_ok_no_content_and_not_found_responses()
+        public async Task Crud_uses_ok_no_content_and_bad_request_responses()
         {
-            var empty = Assert.IsType<OkObjectResult>(await _controller.Get(new GenreQueryRequest(), default));
-            Assert.Empty(Assert.IsType<List<GenreQueryResponse>>(empty.Value));
-            var created = Assert.IsType<CreatedAtActionResult>(
+            Assert.IsType<NoContentResult>(await _controller.Get(new GenreQueryRequest(), default));
+            var created = Assert.IsType<OkObjectResult>(
                 await _controller.Post(new GenreAddRequest { Name = " Drama " }, default));
             var id = Assert.IsType<CommandResponse>(created.Value).Id;
             var read = Assert.IsType<OkObjectResult>(await _controller.GetById(id, default));
@@ -59,11 +58,15 @@ namespace Movies.Tests
             Assert.IsType<OkObjectResult>(await _controller.Put(id,
                 new GenreUpdateRequest { Id = 999, Name = "Comedy" }, default));
             Assert.Equal("Comedy", (await _db.Genres.SingleAsync()).Name);
-            Assert.IsType<NoContentResult>(await _controller.Delete(id, default));
-            Assert.IsType<NotFoundObjectResult>(await _controller.GetById(id, default));
-            Assert.IsType<NotFoundObjectResult>(await _controller.Delete(id, default));
-            Assert.IsType<NotFoundObjectResult>(await _controller.Put(id,
+            var deleted = Assert.IsType<OkObjectResult>(await _controller.Delete(id, default));
+            Assert.True(Assert.IsType<CommandResponse>(deleted.Value).IsSuccessful);
+            Assert.IsType<NoContentResult>(await _controller.GetById(id, default));
+            var deleteMissing = Assert.IsType<BadRequestObjectResult>(await _controller.Delete(id, default));
+            Assert.False(Assert.IsType<CommandResponse>(deleteMissing.Value).IsSuccessful);
+            _controller.ModelState.Clear();
+            var updateMissing = Assert.IsType<BadRequestObjectResult>(await _controller.Put(id,
                 new GenreUpdateRequest { Name = "Missing" }, default));
+            Assert.False(Assert.IsType<CommandResponse>(updateMissing.Value).IsSuccessful);
         }
 
         [Fact]
@@ -111,9 +114,8 @@ namespace Movies.Tests
             var genres = await _mediator.Send(new GenreQueryRequest());
             Assert.Equal(1, (await genres.SingleAsync(g => g.Id == drama.Id)).MovieCountR);
             var emptyGenre = await AddGenre("Empty");
-            var empty = Assert.IsType<OkObjectResult>(await _controller.GetMovies(emptyGenre.Id, default));
-            Assert.Empty(Assert.IsType<List<MovieQueryResponse>>(empty.Value));
-            Assert.IsType<NotFoundObjectResult>(await _controller.GetMovies(int.MaxValue, default));
+            Assert.IsType<NoContentResult>(await _controller.GetMovies(emptyGenre.Id, default));
+            Assert.IsType<NoContentResult>(await _controller.GetMovies(int.MaxValue, default));
         }
 
         [Fact]
@@ -126,7 +128,7 @@ namespace Movies.Tests
                 new MovieGenre { Movie = movie, Genre = comedy });
             await _db.SaveChangesAsync();
             _db.ChangeTracker.Clear();
-            Assert.IsType<NoContentResult>(await _controller.Delete(drama.Id, default));
+            Assert.IsType<OkObjectResult>(await _controller.Delete(drama.Id, default));
             Assert.False(await _db.Genres.AnyAsync(g => g.Id == drama.Id));
             Assert.True(await _db.Genres.AnyAsync(g => g.Id == comedy.Id));
             Assert.True(await _db.Movies.AnyAsync(m => m.Id == movie.Id));

@@ -91,7 +91,8 @@ namespace Movies.Tests
                 NullLogger<DirectorsController>.Instance, _mediator);
             var deleted = await controller.Delete(created.Id, CancellationToken.None);
 
-            Assert.IsType<NoContentResult>(deleted);
+            var ok = Assert.IsType<OkObjectResult>(deleted);
+            Assert.True(Assert.IsType<CommandResponse>(ok.Value).IsSuccessful);
             Assert.False(await (await QueryDirectors()).AnyAsync(d => d.Id == created.Id));
         }
 
@@ -173,8 +174,9 @@ namespace Movies.Tests
                 NullLogger<DirectorsController>.Instance, _mediator);
             var result = await controller.Delete(director.Id, CancellationToken.None);
 
-            var conflict = Assert.IsType<ConflictObjectResult>(result);
-            var response = Assert.IsType<CommandResponse>(conflict.Value);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            var response = Assert.IsType<CommandResponse>(badRequest.Value);
+            Assert.False(response.IsSuccessful);
             Assert.Equal("Director has related movies!", response.Message);
             Assert.True(await _db.Set<Director>().AnyAsync(d => d.Id == director.Id));
         }
@@ -198,14 +200,15 @@ namespace Movies.Tests
         }
 
         [Fact]
-        public async Task Controller_returns_not_found_for_a_missing_director()
+        public async Task Controller_returns_no_content_for_empty_or_missing_data()
         {
             var controller = new DirectorsController(
                 NullLogger<DirectorsController>.Instance, _mediator);
 
-            Assert.IsType<NotFoundObjectResult>(
+            Assert.IsType<NoContentResult>(await controller.Get(new DirectorQueryRequest(), default));
+            Assert.IsType<NoContentResult>(
                 await controller.GetById(999, CancellationToken.None));
-            Assert.IsType<NotFoundObjectResult>(
+            Assert.IsType<NoContentResult>(
                 await controller.GetMovies(999, CancellationToken.None));
         }
 
@@ -221,8 +224,8 @@ namespace Movies.Tests
                 LastName = "Nolan"
             }, CancellationToken.None);
 
-            var createdAt = Assert.IsType<CreatedAtActionResult>(created);
-            var response = Assert.IsType<CommandResponse>(createdAt.Value);
+            var createdOk = Assert.IsType<OkObjectResult>(created);
+            var response = Assert.IsType<CommandResponse>(createdOk.Value);
 
             var read = await controller.GetById(response.Id, CancellationToken.None);
             var ok = Assert.IsType<OkObjectResult>(read);

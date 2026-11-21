@@ -12,7 +12,8 @@ foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
         config => config.RegisterServicesFromAssemblies(assembly));
 }
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
+    options.SuppressModelStateInvalidFilter = true);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Movies API", Version = "v1" }));
@@ -28,6 +29,5 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
-app.UseAuthorization();
 app.MapControllers();
 app.Run();
