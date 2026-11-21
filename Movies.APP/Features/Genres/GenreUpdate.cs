@@ -11,6 +11,7 @@ namespace Movies.APP.Features.Genres
     public class GenreUpdateRequest : Record, IRequest<CommandResponse>
     {
         [Required(ErrorMessage = "{0} is required!")]
+        [StringLength(25, ErrorMessage = "{0} must be maximum {1} characters!")]
         public string Name { get; set; }
     }
 

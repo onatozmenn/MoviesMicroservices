@@ -47,13 +47,16 @@ namespace Movies.APP.Features.Directors
                 query = query.Where(d => d.IsRetired == request.IsRetired.Value);
 
             return Task.FromResult(
-                query.Select(d => new DirectorQueryResponse
-                {
-                    Id = d.Id,
-                    FirstName = d.FirstName,
-                    LastName = d.LastName,
-                    IsRetired = d.IsRetired
-                }));
+                query.OrderBy(d => d.LastName)
+                    .ThenBy(d => d.FirstName)
+                    .ThenBy(d => d.Id)
+                    .Select(d => new DirectorQueryResponse
+                    {
+                        Id = d.Id,
+                        FirstName = d.FirstName,
+                        LastName = d.LastName,
+                        IsRetired = d.IsRetired
+                    }));
         }
     }
 
@@ -74,6 +77,8 @@ namespace Movies.APP.Features.Directors
         {
             return Task.FromResult(
                 DbQuery().Where(m => m.DirectorId == request.Id)
+                    .OrderBy(m => m.Name)
+                    .ThenBy(m => m.Id)
                     .Select(m => new MovieQueryResponse
                     {
                         Id = m.Id,

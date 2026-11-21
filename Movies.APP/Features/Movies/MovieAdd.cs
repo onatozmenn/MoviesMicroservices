@@ -11,6 +11,7 @@ namespace Movies.APP.Features.Movies
     public class MovieAddRequest : Record, IRequest<CommandResponse>
     {
         [Required(ErrorMessage = "{0} is required!")]
+        [StringLength(100, ErrorMessage = "{0} must be maximum {1} characters!")]
         public string Name { get; set; }
 
         public DateTime? ReleaseDate { get; set; }
@@ -39,8 +40,9 @@ namespace Movies.APP.Features.Movies
             if ((request.TotalRevenue ?? 0) < 0)
                 return Error("TotalRevenue cannot be negative.");
 
-            if (!await _db.Set<Director>().AnyAsync(d =>
-                d.Id == request.DirectorId.Value, cancellationToken))
+            if (request.DirectorId is not int directorId ||
+                !await _db.Set<Director>().AnyAsync(d =>
+                    d.Id == directorId, cancellationToken))
                 return Error("Director not found!");
 
             if (await DbQuery().AnyAsync(m =>
@@ -53,7 +55,7 @@ namespace Movies.APP.Features.Movies
                 Name = request.Name.Trim(),
                 ReleaseDate = request.ReleaseDate,
                 TotalRevenue = request.TotalRevenue ?? 0,
-                DirectorId = request.DirectorId.Value,
+                DirectorId = directorId,
             };
             await DbAddAsync(movieEntity, cancellationToken);
 

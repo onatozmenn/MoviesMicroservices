@@ -37,20 +37,22 @@ namespace Movies.APP.Features.MovieGenres
         {
             var query = DbQuery();
 
-            if (request.MovieId.HasValue)
+            if (request.MovieId is int movieId)
                 query = query.Where(movieGenre =>
-                    movieGenre.MovieId == request.MovieId.Value);
+                    movieGenre.MovieId == movieId);
 
-            if (request.GenreId.HasValue)
+            if (request.GenreId is int genreId)
                 query = query.Where(movieGenre =>
-                    movieGenre.GenreId == request.GenreId.Value);
+                    movieGenre.GenreId == genreId);
 
             return Task.FromResult(
-                query.Select(movieGenre => new MovieGenreQueryResponse
-                {
-                    MovieId = movieGenre.MovieId,
-                    GenreId = movieGenre.GenreId
-                }));
+                query.OrderBy(movieGenre => movieGenre.MovieId)
+                    .ThenBy(movieGenre => movieGenre.GenreId)
+                    .Select(movieGenre => new MovieGenreQueryResponse
+                    {
+                        MovieId = movieGenre.MovieId,
+                        GenreId = movieGenre.GenreId
+                    }));
         }
     }
 }

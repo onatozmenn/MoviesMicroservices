@@ -11,6 +11,7 @@ namespace Movies.APP.Features.Movies
     public class MovieUpdateRequest : Record, IRequest<CommandResponse>
     {
         [Required(ErrorMessage = "{0} is required!")]
+        [StringLength(100, ErrorMessage = "{0} must be maximum {1} characters!")]
         public string Name { get; set; }
 
         public DateTime? ReleaseDate { get; set; }
@@ -47,14 +48,15 @@ namespace Movies.APP.Features.Movies
             if (movieEntity is null)
                 return Error("Movie not found!");
 
-            if (!await _db.Set<Director>().AnyAsync(d =>
-                d.Id == request.DirectorId.Value, cancellationToken))
+            if (request.DirectorId is not int directorId ||
+                !await _db.Set<Director>().AnyAsync(d =>
+                    d.Id == directorId, cancellationToken))
                 return Error("Director not found!");
 
             movieEntity.Name = request.Name.Trim();
             movieEntity.ReleaseDate = request.ReleaseDate;
             movieEntity.TotalRevenue = request.TotalRevenue ?? 0;
-            movieEntity.DirectorId = request.DirectorId.Value;
+            movieEntity.DirectorId = directorId;
             await DbUpdateAsync(movieEntity, cancellationToken);
 
             return Success(movieEntity.Id, "Movie updated successfully.");

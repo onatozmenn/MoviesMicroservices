@@ -33,7 +33,8 @@ namespace Movies.APP.Features.Genres
         {
             return base.DbQuery()
                 .Include(genre => genre.MovieGenres)
-                .OrderBy(genre => genre.Name);
+                .OrderBy(genre => genre.Name)
+                .ThenBy(genre => genre.Id);
         }
 
         public Task<IQueryable<GenreQueryResponse>> Handle(
@@ -73,6 +74,8 @@ namespace Movies.APP.Features.Genres
         {
             return Task.FromResult(
                 DbQuery().Where(m => m.MovieGenres.Any(movieGenre => movieGenre.GenreId == request.Id))
+                    .OrderBy(m => m.Name)
+                    .ThenBy(m => m.Id)
                     .Select(m => new MovieQueryResponse
                     {
                         Id = m.Id,

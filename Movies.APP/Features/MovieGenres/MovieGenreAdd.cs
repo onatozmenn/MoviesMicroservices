@@ -32,8 +32,11 @@ namespace Movies.APP.Features.MovieGenres
         public async Task<CommandResponse> Handle(
             MovieGenreAddRequest request, CancellationToken cancellationToken)
         {
-            var movieId = request.MovieId.Value;
-            var genreId = request.GenreId.Value;
+            if (request.MovieId is not int movieId)
+                return Error("Movie not found!");
+
+            if (request.GenreId is not int genreId)
+                return Error("Genre not found!");
 
             if (!await _db.Set<Movie>().AnyAsync(
                 movie => movie.Id == movieId, cancellationToken))

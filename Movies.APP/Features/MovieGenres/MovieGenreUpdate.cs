@@ -44,8 +44,11 @@ namespace Movies.APP.Features.MovieGenres
             if (oldMovieGenreEntity is null)
                 return Error("MovieGenre not found!");
 
-            var movieId = request.MovieId.Value;
-            var genreId = request.GenreId.Value;
+            if (request.MovieId is not int movieId)
+                return Error("Movie not found!");
+
+            if (request.GenreId is not int genreId)
+                return Error("Genre not found!");
 
             if (request.OldMovieId == movieId &&
                 request.OldGenreId == genreId)

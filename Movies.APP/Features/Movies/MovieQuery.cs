@@ -46,21 +46,23 @@ namespace Movies.APP.Features.Movies
                 query = query.Where(m => Regex.IsMatch(m.Name, namePattern));
             }
 
-            if (request.ReleaseYear.HasValue)
+            if (request.ReleaseYear is int releaseYear)
             {
                 query = query.Where(m => m.ReleaseDate.HasValue &&
-                    m.ReleaseDate.Value.Year == request.ReleaseYear.Value);
+                    m.ReleaseDate.Value.Year == releaseYear);
             }
 
             return Task.FromResult(
-                query.Select(m => new MovieQueryResponse
-                {
-                    Id = m.Id,
-                    Name = m.Name,
-                    ReleaseDate = m.ReleaseDate,
-                    TotalRevenue = m.TotalRevenue,
-                    DirectorId = m.DirectorId
-                }));
+                query.OrderBy(m => m.Name)
+                    .ThenBy(m => m.Id)
+                    .Select(m => new MovieQueryResponse
+                    {
+                        Id = m.Id,
+                        Name = m.Name,
+                        ReleaseDate = m.ReleaseDate,
+                        TotalRevenue = m.TotalRevenue,
+                        DirectorId = m.DirectorId
+                    }));
         }
     }
 }
