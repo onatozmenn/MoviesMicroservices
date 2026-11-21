@@ -16,7 +16,9 @@ Open <http://localhost:5223/swagger>. In Rider, open `MoviesMicroservices.sln` a
 
 Startup applies the committed EF Core migrations to `Movies.API/MoviesDB.db`. Database files are local and ignored by Git. A clean clone needs no supplied database or login. Authentication and Gateway belong to the final phase and are not included in this Phase 1 application.
 
-Create a Director and Genre first, then a Movie with that DirectorId, then a MovieGenre link. Requests are also available in `Movies.API/Movies.API.http`; replace the example IDs with IDs returned by POST.
+For sample data, open **MoviesDb → GET /api/SeedDb → Try it out → Execute** in Swagger. On an empty catalog it adds *Interstellar*, its director Christopher Nolan, the Science Fiction and Adventure genres, and both links. An existing catalog is preserved. Run **Movies → GET /api/movies** to see the result.
+
+To create your own catalog, create a Director and Genre first, then a Movie with that DirectorId, then a MovieGenre link. Requests are also available in `Movies.API/Movies.API.http`; replace the example IDs with IDs returned by POST.
 
 ## Structure
 
@@ -40,7 +42,7 @@ Each entity has GET list, GET detail, POST, PUT and DELETE operations. MovieGenr
 | Genre | `/api/genres` | `?name=drama`, `/{id}/movies` |
 | MovieGenre | `/api/movie-genres` | `?movieId=1`, `?genreId=1`, `/{movieId}/{genreId}` |
 
-The catalog has 20 CRUD operations and two related-movie queries. GET returns `200 OK` with results or `204 No Content` for an empty list or missing record. POST, PUT and DELETE return `200 OK` with a `CommandResponse` on success. Invalid input, missing write targets and business rules such as duplicate links return `400 Bad Request` with the error message in `CommandResponse.message`. PUT uses the ID in the URL. For a MovieGenre replacement, put the old pair in the URL and the new pair in the body.
+The catalog has 20 CRUD operations, two related-movie queries and one optional seed operation. GET returns `200 OK` with results or `204 No Content` for an empty list or missing record. POST, PUT and DELETE return `200 OK` with a `CommandResponse` on success. Invalid input, missing write targets and business rules such as duplicate links return `400 Bad Request` with the error message in `CommandResponse.message`. PUT uses the ID in the URL. For a MovieGenre replacement, put the old pair in the URL and the new pair in the body.
 
 ## Data rules
 

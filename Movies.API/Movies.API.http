@@ -56,3 +56,6 @@ DELETE {{baseUrl}}/api/movies/{{movieId}}
 
 ### The unreferenced director can now be deleted
 DELETE {{baseUrl}}/api/directors/{{directorId}}
+
+### Load sample data into an empty catalog
+GET {{baseUrl}}/api/SeedDb
